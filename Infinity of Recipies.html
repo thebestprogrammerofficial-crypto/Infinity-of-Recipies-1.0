@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Infinity of recipies</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --bg: #1e1e2f;
+      --fg: #f9f9f9;
+      --accent: #00d4ff;
+      --card: #2c2c3e;
+      --border: #444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: row;
+      gap: 2rem;
+    }
+
+    .main { flex: 2; }
+    .sidebar {
+      flex: 1;
+      background: #26263a;
+      padding: 1rem;
+      border-radius: 10px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    h1, h2 { font-size: 1.5rem; }
+    p { color: #ccc; }
+
+    #elements {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    .element {
+      background: var(--card);
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+      user-select: none;
+    }
+
+    .element:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .selected {
+      border-color: var(--accent);
+      background: #003c50;
+      font-weight: bold;
+    }
+
+    #result {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    .recipe-entry {
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+
+    .recipe-entry strong { color: var(--fg); }
+
+    .button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 0.5rem;
+    }
+    .button:hover { opacity: 0.8; }
+
+    .modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+    }
+    .modal-content {
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 350px;
+    }
+    .modal.show { visibility: visible; }
+
+    /* Shop styling */
+    .color-option {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      margin: 5px;
+      border: 2px solid white;
+    }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .sidebar { max-height: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <h1>🌌 Infinity of Recipies</h1>
+    <p>Select two elements to combine them and discover new ones!</p>
+    <div id="elements"></div>
+    <div id="result"></div>
+  </div>
+
+  <div class="sidebar">
+    <h2>🧪 Discovered Recipes</h2>
+    <div id="recipeList"></div>
+
+    <div style="margin-top:1rem;">
+      <h2>🏅 Challenge</h2>
+      <p>💎 Gems: <span id="gemCount">0</span></p>
+      <button class="button" onclick="startChallenge()">Start Challenge</button>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <h2>🏪 Shop</h2>
+      <button class="button" onclick="openShop()">Open Shop</button>
+    </div>
+  </div>
+
+  <!-- Challenge Modal -->
+  <div class="modal" id="challengeModal">
+    <div class="modal-content">
+      <h3>🏅 New Challenge</h3>
+      <p id="challengeText"></p>
+      <button class="button" onclick="acceptChallenge()">Challenge Accepted</button>
+      <button class="button" onclick="cancelChallenge()" style="background:#ff4d4d;color:white;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Shop Modal -->
+  <div class="modal" id="shopModal">
+    <div class="modal-content">
+      <h3>🎨 Change Theme</h3>
+
+      <p><strong>Solid Colors (50💎)</strong></p>
+      <div>
+        <div class="color-option" style="background:#1e1e2f;" onclick="buyTheme('#1e1e2f','#00d4ff',false)"></div>
+        <div class="color-option" style="background:#222;" onclick="buyTheme('#222','#ffcc00',false)"></div>
+        <div class="color-option" style="background:#002b36;" onclick="buyTheme('#002b36','#2aa198',false)"></div>
+        <div class="color-option" style="background:#2b002b;" onclick="buyTheme('#2b002b','#ff66ff',false)"></div>
+      </div>
+
+      <p style="margin-top:1rem;"><strong>Gradients (150💎)</strong></p>
+      <div>
+        <div class="color-option" style="background:linear-gradient(45deg, #ff7e5f, #feb47b);" onclick="buyTheme('linear-gradient(45deg, #ff7e5f, #feb47b)', '#ffffff', true)"></div>
+        <div class="color-option" style="background:linear-gradient(45deg, #6a11cb, #2575fc);" onclick="buyTheme('linear-gradient(45deg, #6a11cb, #2575fc)', '#ffffff', true)"></div>
+        <div class="color-option" style="background:linear-gradient(45deg, #ff9a9e, #fad0c4);" onclick="buyTheme('linear-gradient(45deg, #ff9a9e, #fad0c4)', '#ffffff', true)"></div>
+        <div class="color-option" style="background:linear-gradient(45deg, #43cea2, #185a9d);" onclick="buyTheme('linear-gradient(45deg, #43cea2, #185a9d)', '#ffffff', true)"></div>
+      </div>
+
+      <p style="margin-top:1rem;"><strong>Custom Solid Color (50💎)</strong></p>
+      <input type="color" id="customColor" value="#1e1e2f" style="width:100%;height:40px;">
+      <button class="button" onclick="applyCustomColor()">Apply Solid Color</button>
+
+      <p style="margin-top:1rem;"><strong>Custom Gradient (150💎)</strong></p>
+      <input type="color" id="gradColor1" value="#ff7e5f" style="width:48%;height:40px;">
+      <input type="color" id="gradColor2" value="#feb47b" style="width:48%;height:40px;">
+      <button class="button" onclick="applyCustomGradient()">Apply Gradient</button>
+
+      <button class="button" style="margin-top:1rem;" onclick="closeShop()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const emojiMap = {
+      Fire:"🔥", Water:"🌊", Earth:"🌍", Air:"💨", Steam:"💨", Mud:"🟤",
+      Energy:"⚡", Lava:"🌋", Rain:"🌧️", Dust:"🌫️", Geyser:"🌡️", Brick:"🧱",
+      Electricity:"🔌", Plant:"🌱", Ash:"🪨", Tree:"🎄", Smoke:"🌫", Flood:"🌊",
+      Tsunami:"🌊🌊", Meteor:"🪨", Gas:"🌫", Acid:"💦", Rock:"🪨"
+    };
+
+    let elements = ['Fire','Water','Earth','Air'];
+    let selected = [];
+    let discoveredRecipes = [];
+    let gems = 0;
+
+    let challengeActive = false;
+    let challengeGoal = null;
+    let savedElements = [];
+    let savedRecipes = [];
+
+    function saveProgress() {
+      localStorage.setItem("elements", JSON.stringify(elements));
+      localStorage.setItem("recipes", JSON.stringify(discoveredRecipes));
+      localStorage.setItem("gems", gems);
+      localStorage.setItem("themeBg", document.body.style.background || getComputedStyle(document.documentElement).getPropertyValue('--bg'));
+      localStorage.setItem("themeAccent", getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+    }
+
+    function loadProgress() {
+      if (localStorage.getItem("elements")) elements = JSON.parse(localStorage.getItem("elements"));
+      if (localStorage.getItem("recipes")) discoveredRecipes = JSON.parse(localStorage.getItem("recipes"));
+      if (localStorage.getItem("gems")) gems = parseInt(localStorage.getItem("gems"));
+      if (localStorage.getItem("themeBg") && localStorage.getItem("themeAccent")) {
+        setTheme(localStorage.getItem("themeBg"), localStorage.getItem("themeAccent"));
+      }
+      document.getElementById('gemCount').textContent = gems;
+    }
+
+    function renderElements() {
+      const container = document.getElementById('elements');
+      container.innerHTML = '';
+      elements.forEach(el => {
+        const div = document.createElement('div');
+        div.className = 'element' + (selected.includes(el) ? ' selected' : '');
+        div.textContent = `${emojiMap[el] || ''} ${el}`;
+        div.onclick = () => handleSelect(el);
+        container.appendChild(div);
+      });
+    }
+
+    function handleSelect(el) {
+      if (selected.includes(el)) {
+        selected = selected.filter(item => item !== el);
+      } else {
+        selected.push(el);
+        if (selected.length === 2) {
+          combine(selected[0], selected[1]);
+          selected = [];
+        }
+      }
+      renderElements();
+    }
+
+    function combine(a, b) {
+      const recipes = {
+        'Fire+Water':'Steam','Earth+Water':'Mud','Air+Fire':'Energy',
+        'Fire+Earth':'Lava','Water+Air':'Rain','Earth+Air':'Dust',
+        'Steam+Earth':'Geyser','Mud+Fire':'Brick','Energy+Water':'Electricity',
+        'Dust+Rain':'Plant','Tree+Fire':'Ash','Earth+Plant':'Tree',
+        'Ash+Water':'Smoke','Rain+Water':'Flood','Water+Meteor':'Tsunami',
+        'Rock+Gas':'Meteor','Air+Acid':'Gas','Smoke+Air':'Acid','Brick+Mud':'Rock'
+      };
+      const result = recipes[`${a}+${b}`] || recipes[`${b}+${a}`];
+      const resultBox = document.getElementById('result');
+      if (result) {
+        if (!elements.includes(result)) {
+          elements.push(result);
+          discoveredRecipes.push({a,b,result});
+          updateRecipeList();
+          resultBox.innerHTML = `✨ <strong>New Element:</strong> ${emojiMap[result] || ''} ${result}`;
+          saveProgress();
+          if (challengeActive && result === challengeGoal) completeChallenge();
+        } else {
+          resultBox.innerHTML = `✅ Already discovered: ${emojiMap[result] || ''} ${result}`;
+        }
+      } else {
+        resultBox.innerHTML = `❌ No recipe for: ${a} + ${b}`;
+      }
+    }
+
+    function updateRecipeList() {
+      const list = document.getElementById('recipeList');
+      list.innerHTML = '';
+      discoveredRecipes.forEach(({a,b,result}) => {
+        const entry = document.createElement('div');
+        entry.className = 'recipe-entry';
+        entry.innerHTML = `<strong>${emojiMap[a] || ''} ${a}</strong> + <strong>${emojiMap[b] || ''} ${b}</strong> → <strong>${emojiMap[result] || ''} ${result}</strong>`;
+        list.appendChild(entry);
+      });
+    }
+
+    function startChallenge() {
+      if (discoveredRecipes.length < 1) return alert("Discover some elements first!");
+      const discoveredElements = [...new Set(discoveredRecipes.map(r => r.result))];
+      challengeGoal = discoveredElements[Math.floor(Math.random() * discoveredElements.length)];
+      document.getElementById('challengeText').innerHTML = `Goal: ${emojiMap[challengeGoal] || ''} ${challengeGoal}`;
+      document.getElementById('challengeModal').classList.add('show');
+    }
+    function acceptChallenge() {
+      savedElements = [...elements];
+      savedRecipes = [...discoveredRecipes];
+      elements = ['Fire','Water','Earth','Air'];
+      discoveredRecipes = [];
+      challengeActive = true;
+      document.getElementById('challengeModal').classList.remove('show');
+      renderElements(); updateRecipeList();
+      document.getElementById('result').innerHTML = `🏅 Challenge Started!`;
+    }
+    function cancelChallenge() {
+      document.getElementById('challengeModal').classList.remove('show');
+    }
+    function completeChallenge() {
+      challengeActive = false;
+      gems += 50;
+      document.getElementById('gemCount').textContent = gems;
+      elements = savedElements;
+      discoveredRecipes = savedRecipes;
+      renderElements(); updateRecipeList(); saveProgress();
+      document.getElementById('result').innerHTML = `🎉 Challenge Complete! +💎50`;
+    }
+
+    function openShop() {
+      document.getElementById('shopModal').classList.add('show');
+    }
+    function closeShop() {
+      document.getElementById('shopModal').classList.remove('show');
+    }
+
+    function setTheme(bg, accent) {
+      if (bg.startsWith("linear-gradient")) {
+        document.body.style.background = bg;
+        document.documentElement.style.setProperty('--bg', "transparent");
+      } else {
+        document.body.style.background = "";
+        document.documentElement.style.setProperty('--bg', bg);
+      }
+      document.documentElement.style.setProperty('--accent', accent);
+      localStorage.setItem("themeBg", bg);
+      localStorage.setItem("themeAccent", accent);
+    }
+
+    function buyTheme(bg, accent, isGradient) {
+      const cost = isGradient ? 150 : 50;
+      if (gems >= cost) {
+        gems -= cost;
+        setTheme(bg, accent);
+        document.getElementById('gemCount').textContent = gems;
+        saveProgress();
+      } else {
+        alert("Not enough gems!");
+      }
+    }
+
+    function applyCustomColor() {
+      const color = document.getElementById('customColor').value;
+      buyTheme(color, "#00d4ff", false);
+    }
+    function applyCustomGradient() {
+      const c1 = document.getElementById('gradColor1').value;
+      const c2 = document.getElementById('gradColor2').value;
+      const gradient = `linear-gradient(45deg, ${c1}, ${c2})`;
+      buyTheme(gradient, "#ffffff", true);
+    }
+
+    loadProgress();
+    renderElements();
+    updateRecipeList();
+  </script>
+</body>
+</html>
